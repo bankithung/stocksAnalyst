@@ -31,6 +31,17 @@ say 'change settings' to update").
 2. `python scripts/market_pulse.py` — regime gates sizing advice (hostile → say so,
    suggest sitting out or minimal size).
 
+## Data coverage status (update when it changes)
+- Sector tags: ~96% of universe (2,280/2,368, completed 2026-06-10; gaps are mostly
+  rights-entitlement/non-tradeable tickers). R18 sector-crowding rule fully active;
+  show sector in scan visuals. Top up for new listings occasionally:
+  `python scripts/update_data.py sectors --limit 100`.
+- Delivery-average signal: warming up until ~late June 2026 (needs ~21 sessions of
+  daily bhavcopy). Until then `deliv_avg` may be null — Mode B delivery gate is
+  None-safe; disclose when null.
+- Events calendar: live but best-effort (NSE feed) — verify via web when empty for
+  a finalist.
+
 ## Playbooks
 - **Morning scan:** pulse → `screener.py --mode A --setup pullback` and
   `--setup breakout`, plus `--mode B --setup pullback` → for top 3-5 candidates:

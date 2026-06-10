@@ -36,5 +36,7 @@ R17 INVESTABILITY CHECKLIST (mandatory before ANY named suggestion; web-verified
        warning if exposure > 30% of capital.
     If a checklist item cannot be verified, say so and treat as NOT passed for
     Mode B (fail-closed), disclosed for Mode A.
-R18 SECTOR CROWDING: present at most 2 candidates from the same sector per scan;
-    when sector data is missing, note it instead of guessing.
+R18 SECTOR CROWDING: present at most 2 candidates from the same sector per scan.
+    Sector coverage is ~96% (since 2026-06-10) — a missing sector is now rare
+    (mostly non-tradeable tickers); note the gap instead of guessing, and treat
+    unknown-sector candidates as potentially crowding (count conservatively).

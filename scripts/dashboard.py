@@ -29,7 +29,7 @@ text-align:right;padding:9px 10px;border-bottom:1px solid var(--line);cursor:poi
 th:first-child,td:first-child{text-align:left}
 td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
 tr.row{cursor:pointer}tr.row:hover{background:#1d2630}
-.sym{font-weight:600;color:var(--acc)}.tag{font-size:10px;border:1px solid var(--line);
+.sym{font-weight:700;font-size:15px;letter-spacing:.02em;color:var(--acc)}.tag{font-size:10px;border:1px solid var(--line);
 border-radius:4px;padding:1px 5px;margin-left:6px;color:var(--dim)}
 .s-hi{color:var(--good);font-weight:600}.s-md{color:var(--warn)}.s-lo{color:var(--dim)}
 .flag{color:var(--bad);font-weight:700}

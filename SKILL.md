@@ -80,6 +80,9 @@ results as visuals by default, with minimal surrounding text (2-3 sentences max)
   filter, min-score slider, max price / max stop / min move inputs, sortable
   columns, match counter, action buttons, disclaimer footer.
 - **Comparisons → side-by-side bar/tile widget.**
+- **Stock symbols must be BIG and BOLD** — in every widget, table row, card and
+  list, the symbol is the most visually identifiable element: ≥16px, max weight,
+  accent color; price/label secondary beneath it, never inline-tiny.
 - All hard rules apply inside visuals: mode tags, data as-of dates, caution blocks
   for penny/SME/flagged names, % equivalents beside every ₹ figure, honest
   "scores not yet backtest-calibrated" note until calibration lands.

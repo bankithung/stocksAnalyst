@@ -10,6 +10,22 @@ def test_expected_move(env, capsys):
     assert '"typical_rs"' in out and '"typical_pct"' in out and '"days": 10' in out
 
 
+def test_market_pulse_breadth(env, capsys):
+    import json
+    import numpy as np
+    import pandas as pd
+    import update_data, market_pulse
+    con = seed_trend(env, "AAA")
+    seed_trend(env, "BBB")
+    update_data.cmd_snapshots(con)
+    nifty = pd.DataFrame({"Close": 20000 + 10 * np.arange(260)},
+                         index=pd.bdate_range("2025-01-01", periods=260))
+    market_pulse.run(con, nifty_df=nifty)
+    res = json.loads(capsys.readouterr().out)
+    assert res["nifty_trend"] == "up" and res["breadth_pct_above_sma50"] == 100.0
+    assert res["regime"] in ("supportive", "neutral", "hostile")
+
+
 def test_red_flags(env, capsys):
     import json
     import update_data, red_flags

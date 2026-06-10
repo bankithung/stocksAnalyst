@@ -171,8 +171,84 @@ def cmd_fii(con):
     return {"fii_dii_rows": n}
 
 
+def _clip(x, lo=0.0, hi=100.0):
+    return max(lo, min(hi, x))
+
+
+def compute_one(df, cfg, is_sme, flagged):
+    df = df.sort_index()
+    close, high, low, vol = df["close"], df["high"], df["low"], df["volume"]
+    rsi = common.rsi(close, 14).iloc[-1]
+    atr = common.atr(high, low, close, 14).iloc[-1]
+    sma20, sma50, sma200 = [close.rolling(w).mean().iloc[-1] for w in (20, 50, 200)]
+    c = close.iloc[-1]
+    ret5 = (c / close.iloc[-6] - 1) * 100 if len(close) > 6 else 0.0
+    ret20 = (c / close.iloc[-21] - 1) * 100 if len(close) > 21 else 0.0
+    vol_surge = vol.iloc[-1] / max(vol.rolling(20).mean().iloc[-1], 1)
+    dl = df["deliv_pct"].dropna()
+    deliv_surge = (dl.iloc[-1] / max(dl.rolling(20).mean().iloc[-1], 1)
+                   if len(dl) >= 21 else 1.0)
+    adv20_cr = (close * vol).rolling(20).mean().iloc[-1] / 1e7
+    dist52 = (c / close.rolling(min(252, len(close))).max().iloc[-1] - 1) * 100
+    swing = low.rolling(10).min().iloc[-1]
+    stop = swing - 0.5 * atr
+    stop_pct = (c - stop) / c * 100
+    em10 = atr * (cfg["target_days"] ** 0.5)
+    em10_pct = em10 / c * 100
+    rr10 = em10 / max(c - stop, 0.01)
+    atr_pct = atr / c * 100
+
+    sc_trend = (40 if c > sma200 else 0) + (30 if c > sma50 else 0) + \
+               (30 if sma50 > sma200 else 0)
+    sc_mom = 100 if 45 <= rsi <= 65 else (40 if rsi < 35 else
+             (60 if rsi < 45 else (50 if rsi <= 75 else 20)))
+    sc_voldel = _clip(50 * vol_surge) * 0.5 + _clip(50 * deliv_surge) * 0.5
+    tgt_pct = max(cfg["target_move_rs"] / c * 100, 6.0)
+    sc_volfit = _clip(100 * em10_pct / tgt_pct)
+    sc_liq = _clip(adv20_cr / 10 * 100)
+    sc_entry = (100 if stop_pct <= 3 else
+                (100 - (stop_pct - 3) * 20 if stop_pct <= 6 else 20))
+    if rr10 < 2.5:
+        sc_entry = min(sc_entry, 60)
+    score = (0.22 * sc_trend + 0.10 * sc_mom + 0.20 * sc_voldel +
+             0.16 * sc_volfit + 0.14 * sc_liq + 0.18 * sc_entry)
+    mode_b_ok = int((not is_sme) and (not flagged)
+                    and adv20_cr >= cfg["liquidity_floor_cr_b"]
+                    and c >= cfg["min_price_b"] and c > sma200)
+    return (float(c), float(atr), float(atr_pct), float(rsi), float(sma20),
+            float(sma50), float(sma200), float(ret5), float(ret20),
+            float(vol_surge), float(deliv_surge), float(adv20_cr), float(dist52),
+            float(swing), float(stop), float(stop_pct), float(em10),
+            float(em10_pct), float(rr10), float(score), float(sc_trend),
+            float(sc_mom), float(sc_voldel), float(sc_volfit), float(sc_liq),
+            float(sc_entry), mode_b_ok)
+
+
 def cmd_snapshots(con):
-    raise NotImplementedError
+    import pandas as pd
+    cfg = common.load_config()
+    flagged = {r[0] for r in con.execute(
+        "SELECT DISTINCT symbol FROM surveillance WHERE date="
+        "(SELECT MAX(date) FROM surveillance)")}
+    sme = {r[0]: r[1] for r in con.execute("SELECT symbol,is_sme FROM instruments")}
+    n = 0
+    for (sym,) in con.execute("SELECT DISTINCT symbol FROM eod_prices"):
+        df = pd.read_sql_query(
+            "SELECT date,open,high,low,close,volume,deliv_pct FROM eod_prices "
+            "WHERE symbol=? ORDER BY date", con, params=(sym,),
+            index_col="date", parse_dates=["date"])
+        if len(df) < 210:
+            continue
+        try:
+            vals = compute_one(df, cfg, sme.get(sym, 0), sym in flagged)
+        except Exception:
+            continue
+        con.execute("INSERT OR REPLACE INTO snapshots VALUES(?,?" + ",?" * 27 + ")",
+                    (sym, df.index[-1].strftime("%Y-%m-%d")) + vals)
+        n += 1
+    con.commit()
+    common.set_fresh(con, "snapshots", date.today())
+    return {"snapshot_rows": n}
 
 
 def main():

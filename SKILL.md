@@ -60,6 +60,26 @@ say 'change settings' to update").
 - **Backtest a setup:** `backtest.py --setup pullback --mode A --years 3` per the
   discipline section in methodology.md; record results in its calibration log.
 
+## Presentation contract — VISUAL FIRST (user preference, 2026-06-10)
+When inline widget rendering is available (Claude desktop visualize tool), present
+results as visuals by default, with minimal surrounding text (2-3 sentences max):
+- **Single-stock pick / deep-dive → "trade card" widget:** price ladder
+  (STOP → ENTRY → TARGET with ₹ and % distances and ₹ loss/gain at position size),
+  metric tiles (shares via 1% rule, max loss ₹, potential ₹, daily liquidity),
+  score-breakdown bars (all 6 components, color-coded), penny-trap checklist with
+  ✓/pending icons, ranked comparison bars vs alternatives, action buttons via
+  sendPrompt (log to journal · compare · deep-dive), and the disclaimer + regime +
+  as-of footer INSIDE the widget.
+- **Scan / screener results → interactive table widget:** mode A/B toggle, setup
+  filter, min-score slider, max price / max stop / min move inputs, sortable
+  columns, match counter, action buttons, disclaimer footer.
+- **Comparisons → side-by-side bar/tile widget.**
+- All hard rules apply inside visuals: mode tags, data as-of dates, caution blocks
+  for penny/SME/flagged names, % equivalents beside every ₹ figure, honest
+  "scores not yet backtest-calibrated" note until calibration lands.
+- Fallback without widget support (terminal): compact markdown tables + generate
+  `dashboard.py` HTML and give the file path.
+
 ## Hard rules (non-negotiable — full list in references/behavior-rules.md)
 Numbers only from script output or cited web sources with dates — never from memory.
 Always state data as-of date. Every research answer ends with a Risk section. Every

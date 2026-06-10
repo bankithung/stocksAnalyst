@@ -80,16 +80,95 @@ def cmd_backfill(con, symbols=None):
     return {"price_rows": total, "symbols": len(syms), "failed": len(failed)}
 
 
+def parse_bhav(text):
+    out = []
+    for r in csv.DictReader(io.StringIO(text)):
+        r = {k.strip(): (v or "").strip() for k, v in r.items()}
+        try:
+            d = datetime.strptime(r["DATE1"], "%d-%b-%Y").strftime("%Y-%m-%d")
+            dp = r.get("DELIV_PER", "-")
+            out.append((r["SYMBOL"], d, float(r["OPEN_PRICE"]), float(r["HIGH_PRICE"]),
+                        float(r["LOW_PRICE"]), float(r["CLOSE_PRICE"]),
+                        float(r["TTL_TRD_QNTY"]),
+                        float(dp) if dp not in ("-", "") else None))
+        except (KeyError, ValueError):
+            continue
+    return out
+
+
 def cmd_daily(con, days=7):
-    raise NotImplementedError
+    s = common.nse_session()
+    got = 0
+    for back in range(days):
+        d = date.today() - timedelta(days=back)
+        if d.weekday() >= 5:
+            continue
+        url = BHAV_URL.format(d=d.strftime("%d%m%Y"))
+        try:
+            r = s.get(url, timeout=30)
+            if r.status_code != 200 or "SYMBOL" not in r.text[:200]:
+                continue
+        except Exception:
+            continue
+        rows = parse_bhav(r.text)
+        con.executemany(
+            "INSERT OR REPLACE INTO eod_prices VALUES(?,?,?,?,?,?,?,?,?)",
+            [(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], "bhav") for x in rows])
+        con.commit()
+        got += len(rows)
+        common.set_fresh(con, "prices_daily", d)
+    return {"bhav_rows": got}
 
 
 def cmd_surveillance(con):
-    raise NotImplementedError
+    s = common.nse_session()
+    n = 0
+    for list_type, url in [("ASM", "https://www.nseindia.com/api/reportASM"),
+                           ("GSM", "https://www.nseindia.com/api/reportGSM")]:
+        try:
+            j = s.get(url, timeout=15).json()
+        except Exception:
+            continue
+        items = j.get("longterm", {}).get("data", []) if isinstance(j, dict) else []
+        items += j.get("shortterm", {}).get("data", []) if isinstance(j, dict) else []
+        if not items and isinstance(j, dict) and "data" in j:
+            items = j["data"]
+        today = date.today().strftime("%Y-%m-%d")
+        for it in items:
+            if not isinstance(it, dict):
+                continue
+            sym = (it.get("symbol") or "").strip()
+            if sym:
+                con.execute("INSERT OR REPLACE INTO surveillance VALUES(?,?,?,?)",
+                            (sym, today, list_type, str(it.get("asmSurvIndicator")
+                             or it.get("gsmSurvIndicator") or it.get("stage") or "1")))
+                n += 1
+        con.commit()
+        if n:
+            common.set_fresh(con, "surveillance", today)
+    return {"surveillance_rows": n}
 
 
 def cmd_fii(con):
-    raise NotImplementedError
+    s = common.nse_session()
+    try:
+        j = s.get("https://www.nseindia.com/api/fiidiiTradeReact", timeout=15).json()
+    except Exception:
+        return {"fii_dii_rows": 0}
+    n = 0
+    for it in j if isinstance(j, list) else []:
+        try:
+            d = datetime.strptime(it["date"], "%d-%b-%Y").strftime("%Y-%m-%d")
+            con.execute("INSERT OR REPLACE INTO fii_dii VALUES(?,?,?,?,?)",
+                        (d, it["category"], float(it["buyValue"]),
+                         float(it["sellValue"]), float(it["netValue"])))
+            n += 1
+        except (KeyError, ValueError):
+            continue
+    con.commit()
+    if n:
+        common.set_fresh(con, "fii_dii", date.today())
+    return {"fii_dii_rows": n}
 
 
 def cmd_snapshots(con):

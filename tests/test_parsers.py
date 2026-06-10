@@ -19,6 +19,20 @@ def test_universe_upsert(env):
     assert n == 2
 
 
+BHAV_SAMPLE = """SYMBOL, SERIES, DATE1, PREV_CLOSE, OPEN_PRICE, HIGH_PRICE, LOW_PRICE, LAST_PRICE, CLOSE_PRICE, AVG_PRICE, TTL_TRD_QNTY, TURNOVER_LACS, NO_OF_TRADES, DELIV_QTY, DELIV_PER
+RELIANCE, EQ, 09-Jun-2026, 2900, 2910, 2950, 2905, 2940, 2945.5, 2930, 5000000, 146500, 250000, 2500000, 50.00
+JUNK, BE, 09-Jun-2026, 10, 10, 11, 9, 10, 10.5, 10, 100, 1, 10, 50, 50.00
+"""
+
+
+def test_parse_bhav(env):
+    import update_data
+    rows = update_data.parse_bhav(BHAV_SAMPLE)
+    assert rows[0][:2] == ("RELIANCE", "2026-06-09")
+    assert rows[0][7] == 50.0          # deliv_pct
+    assert len(rows) == 2              # BE series kept too
+
+
 def test_upsert_prices_idempotent(env):
     import pandas as pd
     import update_data

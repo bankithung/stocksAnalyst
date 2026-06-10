@@ -1,0 +1,16 @@
+capital: 100000          # ₹ — EDIT ME
+risk_pct: 1.0            # Mode A: % of capital risked per trade
+mode_b_positions: 8      # Mode B: equal-weight slots
+tax_slab: 20             # % — for Claude's post-tax commentary
+target_move_rs: 50       # the ₹-move goal
+target_days: 10          # holding window (sessions)
+liquidity_floor_cr_a: 2.0   # min 20d avg traded value, Mode A (₹ cr)
+liquidity_floor_cr_b: 5.0   # Mode B
+min_price_b: 50          # Mode B price floor
+charges:                 # delivery equity, discount broker; VERIFY current rates
+  brokerage_pct: 0.0
+  stt_pct: 0.1           # each side
+  exchange_pct: 0.00297
+  sebi_pct: 0.0001
+  stamp_buy_pct: 0.015
+  gst_pct: 18.0          # on brokerage+exchange+sebi

@@ -15,3 +15,8 @@ R12 No market manipulation help, no insider info, no pump groups, no tax evasion
 R13 Entries within ~5 sessions of scheduled results: warn (gap risk) — check via web.
 R14 This is personal analytics, not advice for others; remind if user shares it onward.
 R15 Describe Mode A stops as risk-control (tail-cutting), not return enhancement.
+R16 VISUAL FIRST: when widget rendering is available, every result renders as its
+    defined visual contract (trade card / interactive scan table / comparison bars
+    per SKILL.md "Presentation contract") with at most 2-3 sentences of text;
+    without widget support, compact tables + dashboard.py HTML. All other rules
+    (mode tags, dates, caution blocks, ₹+% pairs, disclaimer) apply INSIDE visuals.

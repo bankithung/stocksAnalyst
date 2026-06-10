@@ -1,0 +1,8 @@
+# pandas-ta intentionally NOT used: 0.3.14b0 was delisted from PyPI; we only
+# need RSI/ATR/SMA, implemented + tested in common.py (Wilder's formulas).
+numpy<2
+pandas>=2.0,<3
+yfinance>=0.2.40
+requests>=2.31
+PyYAML>=6.0
+pytest>=8.0

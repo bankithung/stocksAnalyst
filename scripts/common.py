@@ -49,8 +49,9 @@ DEFAULTS = {
 
 def db():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(DB_PATH)
+    con = sqlite3.connect(DB_PATH, timeout=30)
     con.execute("PRAGMA journal_mode=WAL")
+    con.execute("PRAGMA busy_timeout=30000")
     con.executescript(SCHEMA)
     return con
 

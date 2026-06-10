@@ -20,6 +20,9 @@ R16 VISUAL FIRST: when widget rendering is available, every result renders as it
     per SKILL.md "Presentation contract") with at most 2-3 sentences of text;
     without widget support, compact tables + dashboard.py HTML. All other rules
     (mode tags, dates, caution blocks, ₹+% pairs, disclaimer) apply INSIDE visuals.
+    Stock symbols are ALWAYS the most identifiable element of any visual or row:
+    big (≥16px; 20-26px for the featured name), bold/max-weight, accent color —
+    company name, price and labels render secondary beneath, never inline-tiny.
 R17 INVESTABILITY CHECKLIST (mandatory before ANY named suggestion; web-verified,
     findings cited with dates; shown in the trade card):
     a. Promoter pledge ≤ 10% — Mode B HARD FAIL above it; Mode A: warn prominently.

@@ -13,7 +13,7 @@ def _snapshot_series(df, cfg):
             "ret5", "ret20", "vol_surge", "deliv_surge", "adv20_cr",
             "dist_52w_high", "swing_low_10", "stop_price", "stop_pct", "em10_rs",
             "em10_pct", "rr10", "score", "sc_trend", "sc_mom", "sc_voldel",
-            "sc_volfit", "sc_liq", "sc_entry", "mode_b_ok"]
+            "sc_volfit", "sc_liq", "sc_entry", "mode_b_ok", "gap_p90", "deliv_avg"]
     for i in range(210, len(df) - 1):
         vals = compute_one(df.iloc[: i + 1], cfg, 0, False)
         yield i, dict(zip(cols, vals))

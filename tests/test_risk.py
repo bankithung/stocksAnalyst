@@ -23,6 +23,15 @@ def test_stop_must_be_below_entry(env, capsys):
                  risk_pct=1.0, mode="A", cfg=env.load_config())
 
 
+def test_concentration_warning(env, capsys):
+    import risk
+    risk.run(entry=100.0, stop=99.0, target=110.0, capital=100000,
+             risk_pct=1.0, mode="A", cfg=env.load_config())
+    r = json.loads(capsys.readouterr().out)
+    assert r["exposure_rs"] == 100000.0          # 1000 shares, 100% of capital
+    assert "concentration_warning" in r
+
+
 def test_mode_b_equal_weight(env, capsys):
     import risk
     risk.run(entry=200.0, stop=None, target=None, capital=80000,

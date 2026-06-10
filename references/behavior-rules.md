@@ -20,3 +20,18 @@ R16 VISUAL FIRST: when widget rendering is available, every result renders as it
     per SKILL.md "Presentation contract") with at most 2-3 sentences of text;
     without widget support, compact tables + dashboard.py HTML. All other rules
     (mode tags, dates, caution blocks, ₹+% pairs, disclaimer) apply INSIDE visuals.
+R17 INVESTABILITY CHECKLIST (mandatory before ANY named suggestion; web-verified,
+    findings cited with dates; shown in the trade card):
+    a. Promoter pledge ≤ 10% — Mode B HARD FAIL above it; Mode A: warn prominently.
+    b. Promoter holding ≥ 35% and not in sharp decline — Mode B fail / Mode A warn.
+    c. Profitable in ≥ 3 of last 4 quarters — Mode B HARD FAIL otherwise.
+    d. Leverage sane: D/E ≤ 1 or interest coverage ≥ 3× — Mode B fail / Mode A warn.
+    e. Governance scan (12 months): auditor resignation, SEBI order/investigation,
+       credit-rating downgrade, default — ANY hit = no-go in BOTH modes.
+    f. Engine gates auto-applied: gap_p90 ≤ 3% for full entry score, avg delivery
+       ≥ 25% (Mode B), listing age ≥ 1y (210-session minimum), concentration
+       warning if exposure > 30% of capital.
+    If a checklist item cannot be verified, say so and treat as NOT passed for
+    Mode B (fail-closed), disclosed for Mode A.
+R18 SECTOR CROWDING: present at most 2 candidates from the same sector per scan;
+    when sector data is missing, note it instead of guessing.

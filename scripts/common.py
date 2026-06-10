@@ -36,7 +36,15 @@ CREATE TABLE IF NOT EXISTS journal(
   id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, symbol TEXT, mode TEXT,
   action TEXT, price REAL, qty INTEGER, stop REAL, target REAL,
   thesis TEXT, status TEXT DEFAULT 'idea', outcome_pct REAL, closed_ts TEXT);
+CREATE TABLE IF NOT EXISTS events(
+  symbol TEXT, date TEXT, purpose TEXT, PRIMARY KEY(symbol, date, purpose));
 """
+
+MIGRATIONS = (
+    "ALTER TABLE snapshots ADD COLUMN gap_p90 REAL",
+    "ALTER TABLE snapshots ADD COLUMN deliv_avg REAL",
+    "ALTER TABLE instruments ADD COLUMN sector TEXT",
+)
 
 DEFAULTS = {
     "capital": 100000, "risk_pct": 1.0, "mode_b_positions": 8, "tax_slab": 20,
@@ -53,6 +61,11 @@ def db():
     con.execute("PRAGMA journal_mode=WAL")
     con.execute("PRAGMA busy_timeout=30000")
     con.executescript(SCHEMA)
+    for ddl in MIGRATIONS:
+        try:
+            con.execute(ddl)
+        except sqlite3.OperationalError:
+            pass
     return con
 
 

@@ -37,9 +37,14 @@ def gather(con, mode="A", setup="any", min_em_rs=None, max_price=None,
             continue
         out.append(s)
     out.sort(key=lambda x: -x["score"])
+    sectors = {r[0]: r[1] for r in con.execute(
+        "SELECT symbol, sector FROM instruments WHERE sector IS NOT NULL")}
+    for r in out:
+        r["sector"] = sectors.get(r["symbol"])
     keep = ["symbol", "close", "score", "sc_entry", "rr10", "em10_rs", "em10_pct",
             "stop_pct", "stop_price", "rsi14", "ret5", "vol_surge", "deliv_surge",
-            "adv20_cr", "dist_52w_high", "flagged", "mode_b_ok"]
+            "adv20_cr", "dist_52w_high", "gap_p90", "deliv_avg", "sector",
+            "flagged", "mode_b_ok"]
     results = (out[:limit] if full
                else [{k: r[k] for k in keep} for r in out[:limit]])
     return {"as_of": last, "mode": mode, "setup": setup,

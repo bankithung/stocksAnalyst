@@ -206,22 +206,31 @@ def compute_one(df, cfg, is_sme, flagged):
     tgt_pct = max(cfg["target_move_rs"] / c * 100, 6.0)
     sc_volfit = _clip(100 * em10_pct / tgt_pct)
     sc_liq = _clip(adv20_cr / 10 * 100)
+    prev_c = close.shift(1)
+    gaps = ((df["open"] - prev_c).abs() / prev_c * 100).dropna().tail(120)
+    gap_p90 = float(gaps.quantile(0.9)) if len(gaps) >= 20 else 0.0
+    deliv_avg = float(dl.tail(60).mean()) if len(dl) >= 10 else None
+
     sc_entry = (100 if stop_pct <= 3 else
                 (100 - (stop_pct - 3) * 20 if stop_pct <= 6 else 20))
     if rr10 < 2.5:
         sc_entry = min(sc_entry, 60)
+    if gap_p90 > 3.0:
+        sc_entry = min(sc_entry, 60)   # wild gappers: stops unreliable
     score = (0.22 * sc_trend + 0.10 * sc_mom + 0.20 * sc_voldel +
              0.16 * sc_volfit + 0.14 * sc_liq + 0.18 * sc_entry)
     mode_b_ok = int((not is_sme) and (not flagged)
                     and adv20_cr >= cfg["liquidity_floor_cr_b"]
-                    and c >= cfg["min_price_b"] and c > sma200)
+                    and c >= cfg["min_price_b"] and c > sma200
+                    and (deliv_avg is None or deliv_avg >= 25.0))
     return (float(c), float(atr), float(atr_pct), float(rsi), float(sma20),
             float(sma50), float(sma200), float(ret5), float(ret20),
             float(vol_surge), float(deliv_surge), float(adv20_cr), float(dist52),
             float(swing), float(stop), float(stop_pct), float(em10),
             float(em10_pct), float(rr10), float(score), float(sc_trend),
             float(sc_mom), float(sc_voldel), float(sc_volfit), float(sc_liq),
-            float(sc_entry), mode_b_ok)
+            float(sc_entry), mode_b_ok, gap_p90,
+            deliv_avg if deliv_avg is None else float(deliv_avg))
 
 
 def cmd_snapshots(con):
@@ -243,7 +252,7 @@ def cmd_snapshots(con):
             vals = compute_one(df, cfg, sme.get(sym, 0), sym in flagged)
         except Exception:
             continue
-        con.execute("INSERT OR REPLACE INTO snapshots VALUES(?,?" + ",?" * 27 + ")",
+        con.execute("INSERT OR REPLACE INTO snapshots VALUES(?,?" + ",?" * 29 + ")",
                     (sym, df.index[-1].strftime("%Y-%m-%d")) + vals)
         n += 1
     con.commit()
@@ -251,12 +260,62 @@ def cmd_snapshots(con):
     return {"snapshot_rows": n}
 
 
+def cmd_events(con):
+    s = common.nse_session()
+    try:
+        j = s.get("https://www.nseindia.com/api/event-calendar", timeout=15).json()
+    except Exception:
+        return {"event_rows": 0}
+    n = 0
+    for it in j if isinstance(j, list) else []:
+        if not isinstance(it, dict):
+            continue
+        sym = (it.get("symbol") or "").strip()
+        raw = (it.get("date") or "").strip()
+        dd = None
+        for fmt in ("%d-%b-%Y", "%d %b %Y", "%Y-%m-%d"):
+            try:
+                dd = datetime.strptime(raw, fmt).strftime("%Y-%m-%d")
+                break
+            except ValueError:
+                continue
+        if sym and dd:
+            con.execute("INSERT OR REPLACE INTO events VALUES(?,?,?)",
+                        (sym, dd, (it.get("purpose") or "")[:120]))
+            n += 1
+    con.commit()
+    if n:
+        common.set_fresh(con, "events", date.today())
+    return {"event_rows": n}
+
+
+def cmd_sectors(con, limit=200):
+    import yfinance as yf
+    syms = [r[0] for r in con.execute(
+        "SELECT symbol FROM instruments WHERE sector IS NULL AND status='active' "
+        "ORDER BY symbol LIMIT ?", (limit,))]
+    n = 0
+    for s_ in syms:
+        try:
+            sec = (yf.Ticker(s_ + ".NS").info or {}).get("sector")
+        except Exception:
+            continue
+        if sec:
+            con.execute("UPDATE instruments SET sector=? WHERE symbol=?", (sec, s_))
+            n += 1
+    con.commit()
+    remaining = con.execute("SELECT COUNT(*) FROM instruments WHERE sector IS NULL "
+                            "AND status='active'").fetchone()[0]
+    return {"sectors_filled": n, "sectors_remaining": remaining}
+
+
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("cmd", choices=["universe", "backfill", "daily",
-                                   "surveillance", "fii", "snapshots", "full"])
+    p.add_argument("cmd", choices=["universe", "backfill", "daily", "surveillance",
+                                   "fii", "events", "sectors", "snapshots", "full"])
     p.add_argument("--days", type=int, default=7)
     p.add_argument("--symbols", default=None, help="comma list (backfill subset)")
+    p.add_argument("--limit", type=int, default=200, help="sectors batch size")
     a = p.parse_args()
     con = common.db()
     try:
@@ -270,6 +329,10 @@ def main():
             common.json_out(cmd_surveillance(con))
         elif a.cmd == "fii":
             common.json_out(cmd_fii(con))
+        elif a.cmd == "events":
+            common.json_out(cmd_events(con))
+        elif a.cmd == "sectors":
+            common.json_out(cmd_sectors(con, a.limit))
         elif a.cmd == "snapshots":
             common.json_out(cmd_snapshots(con))
         elif a.cmd == "full":
@@ -277,6 +340,7 @@ def main():
             out.update(cmd_daily(con, a.days))
             out.update(cmd_surveillance(con))
             out.update(cmd_fii(con))
+            out.update(cmd_events(con))
             out.update(cmd_snapshots(con))
             common.json_out(out)
     except Exception as e:

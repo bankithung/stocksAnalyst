@@ -39,11 +39,17 @@ say 'change settings' to update").
   stop (A), expected move ₹/% , score breakdown, sizing via `risk.py` → offer to
   log: `journal.py add --symbol SYM --mode A --price P --stop S --target T
   --thesis "..."`.
-- **Deep-dive SYMBOL:** technicals + expected_move + red_flags + web news/results
-  calendar check (no entries within ~5 sessions of results) + single-symbol
-  fundamentals via web/yfinance for Mode B confirmation → structured report
-  (Snapshot · Score breakdown · Expected move ₹+% · Entry quality · Red flags ·
-  News with dates · Risk section · mode tag).
+- **Deep-dive SYMBOL:** technicals + expected_move + red_flags + web news + the
+  **R17 investability checklist (MANDATORY — no named suggestion without it):**
+  promoter pledge ≤10% · promoter holding ≥35% not falling · profitable ≥3 of 4
+  quarters · D/E ≤1 or interest cover ≥3× · 12-month governance scan (auditor
+  exit / SEBI orders / rating cuts / defaults = no-go both modes) — web-verified,
+  cited with dates, results shown as the checklist panel in the trade card.
+  Engine adds gap_p90, delivery-average and concentration checks automatically;
+  `upcoming_events_10d` in technicals output covers the results-window rule
+  (verify via web if empty — the calendar feed is best-effort). Unverifiable
+  item = fail-closed for Mode B, disclosed for Mode A. Max 2 same-sector names
+  per scan (R18).
 - **Dashboard:** `python scripts/dashboard.py` → writes and opens
   `data/dashboard.html` — a self-contained, offline, dark-theme dashboard of the
   latest snapshot date: Mode A/B toggle, setup tags, live filters (min score,

@@ -37,3 +37,35 @@ def test_mode_b_excludes_sme(env):
     update_data.cmd_snapshots(con)
     v = con.execute("SELECT mode_b_ok FROM snapshots WHERE symbol='SMESTK'").fetchone()[0]
     assert v == 0
+
+
+def test_gap_penalty_caps_entry_quality(env):
+    import update_data
+    con = env.db()
+    con.execute("INSERT OR REPLACE INTO instruments(symbol,name,series,isin,is_sme)"
+                " VALUES('GAPPY','GAPPY','EQ','X',0)")
+    n = 300
+    close = 100 + 0.4 * np.arange(n)
+    dates = pd.bdate_range("2025-01-01", periods=n)
+    rows = []
+    for i, (d, c) in enumerate(zip(dates, close)):
+        op = c * (1.06 if i % 5 == 0 else 1.0)      # 6% gap every 5th day
+        rows.append(("GAPPY", d.strftime("%Y-%m-%d"), op, max(op, c) + 1.0,
+                     c - 1.0, c, 1_000_000, 45.0, "yf"))
+    con.executemany("INSERT OR REPLACE INTO eod_prices VALUES(?,?,?,?,?,?,?,?,?)", rows)
+    con.commit()
+    update_data.cmd_snapshots(con)
+    gp, se = con.execute("SELECT gap_p90, sc_entry FROM snapshots WHERE "
+                         "symbol='GAPPY'").fetchone()
+    assert gp > 3.0 and se <= 60
+
+
+def test_mode_b_delivery_floor(env):
+    import update_data
+    con = seed_trend(env, symbol="CHURNY")
+    con.execute("UPDATE eod_prices SET deliv_pct=10.0 WHERE symbol='CHURNY'")
+    con.commit()
+    update_data.cmd_snapshots(con)
+    v, da = con.execute("SELECT mode_b_ok, deliv_avg FROM snapshots WHERE "
+                        "symbol='CHURNY'").fetchone()
+    assert da < 25 and v == 0

@@ -20,6 +20,9 @@ def run(symbol, con):
     flags = [dict(zip(("list_type", "stage"), r)) for r in con.execute(
         "SELECT list_type, stage FROM surveillance WHERE symbol=? AND date="
         "(SELECT MAX(date) FROM surveillance)", (symbol,))]
+    events = [dict(zip(("date", "purpose"), r)) for r in con.execute(
+        "SELECT date, purpose FROM events WHERE symbol=? AND date>=date('now') "
+        "AND date<=date('now','+10 day') ORDER BY date", (symbol,))]
     trend = ("strong-up" if s["close"] > s["sma20"] > s["sma50"] > s["sma200"] else
              "up" if s["close"] > s["sma200"] else
              "down" if s["close"] < s["sma200"] else "sideways")
@@ -27,7 +30,8 @@ def run(symbol, con):
     common.json_out({**s, "symbol": symbol, "as_of": s["date"],
                      "data_age_days": age, "trend": trend,
                      "support": lo20, "resistance": hi20,
-                     "surveillance_flags": flags})
+                     "surveillance_flags": flags,
+                     "upcoming_events_10d": events})
 
 
 if __name__ == "__main__":

@@ -29,6 +29,11 @@ def run(entry, stop, target, capital, risk_pct, mode, cfg):
            "qty": qty, "exposure_rs": round(exposure, 1),
            "charges_round_trip_rs": charges_round_trip(
                exposure, qty * (target or entry), cfg["charges"])}
+    if exposure > 0.30 * capital:
+        out["concentration_warning"] = (
+            f"exposure is {exposure / capital * 100:.0f}% of capital in one stock — "
+            "an overnight gap bypasses the stop on the whole position; consider a "
+            "smaller size or a wider-priced candidate")
     if mode == "A":
         out.update({
             "max_loss_rs": round(qty * (entry - stop), 1),

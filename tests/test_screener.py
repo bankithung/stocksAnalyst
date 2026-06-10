@@ -24,6 +24,19 @@ def test_mode_b_gates(env, capsys):
     assert "CLEAN" in syms and "SMESTK" not in syms and "FLAGGED" not in syms
 
 
+def test_dashboard_builds(env, tmp_path):
+    import dashboard
+    con = seed_three(env)
+    payload = dashboard.build_payload(con, limit=50)
+    assert payload["A"] and payload["B"]
+    assert all("setups" in r for r in payload["A"])
+    html = dashboard.build_html(payload)
+    assert "CLEAN" in html and "__PAYLOAD__" not in html
+    out = tmp_path / "dash.html"
+    out.write_text(html, encoding="utf-8")
+    assert out.stat().st_size > 5000
+
+
 def test_mode_a_shows_flag(env, capsys):
     import screener
     con = seed_three(env)

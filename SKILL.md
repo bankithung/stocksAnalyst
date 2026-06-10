@@ -10,6 +10,20 @@ Scripts live in `scripts/` (run with `.venv\Scripts\python` from the skill root:
 Methodology: `references/methodology.md`. Behavior rules:
 `references/behavior-rules.md` — READ AND OBEY BOTH.
 
+## Interactive preferences — ASK, don't assume
+At the start of a session's first scan/dashboard request (or when the user has not
+stated preferences), ask up to 3 quick questions before analyzing — use the
+AskUserQuestion tool when available, plain questions otherwise:
+1. **Capital & risk** — if `data/config.yaml` still holds the placeholder default
+   (capital 100000 with "EDIT ME"), ask for real capital and risk % per trade.
+2. **Mode preference** — A (swing + stops), B (quality patience), or both.
+3. **Constraints** — max price per share, minimum expected ₹ move, sectors to avoid
+   (optional; skip if user says "no preferences").
+Persist answers by editing `data/config.yaml` (scripts read it as defaults) and
+confirm what was saved. In-chat overrides always win for that conversation (P6).
+Never re-ask what is already on file — recap instead ("using ₹2L capital, 1% risk;
+say 'change settings' to update").
+
 ## Before ANY analysis
 1. Check freshness: `technicals.py` output carries `data_age_days`; if > 1 trading
    day stale, run `python scripts/update_data.py full` first (or disclose staleness
@@ -30,6 +44,13 @@ Methodology: `references/methodology.md`. Behavior rules:
   fundamentals via web/yfinance for Mode B confirmation → structured report
   (Snapshot · Score breakdown · Expected move ₹+% · Entry quality · Red flags ·
   News with dates · Risk section · mode tag).
+- **Dashboard:** `python scripts/dashboard.py` → writes and opens
+  `data/dashboard.html` — a self-contained, offline, dark-theme dashboard of the
+  latest snapshot date: Mode A/B toggle, setup tags, live filters (min score,
+  max price, max stop %, min expected ₹ move, search), sortable columns, row
+  detail with score breakdown. Use `--no-open` to skip the browser launch.
+  When inline widget rendering is available (Claude desktop), ALSO render the
+  same data as an interactive in-chat widget after generating the file.
 - **Trap check:** `red_flags.py SYM` + news; explain each flag in one line.
 - **Size a trade:** `risk.py --entry E --stop S --target T [--mode B]`.
 - **Position review:** `journal.py list` → for each open position: technicals +

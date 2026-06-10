@@ -3,8 +3,9 @@ import common
 from setups import SETUPS
 
 
-def run(con, mode="A", setup="any", min_em_rs=None, max_price=None,
-        min_score=60, max_stop_pct=None, limit=15, include_flagged=False):
+def gather(con, mode="A", setup="any", min_em_rs=None, max_price=None,
+           min_score=60, max_stop_pct=None, limit=15, include_flagged=False,
+           full=False):
     cfg = common.load_config()
     last = con.execute("SELECT MAX(date) FROM snapshots").fetchone()[0]
     if not last:
@@ -39,9 +40,16 @@ def run(con, mode="A", setup="any", min_em_rs=None, max_price=None,
     keep = ["symbol", "close", "score", "sc_entry", "rr10", "em10_rs", "em10_pct",
             "stop_pct", "stop_price", "rsi14", "ret5", "vol_surge", "deliv_surge",
             "adv20_cr", "dist_52w_high", "flagged", "mode_b_ok"]
-    common.json_out({"as_of": last, "mode": mode, "setup": setup,
-                     "matches": len(out),
-                     "results": [{k: r[k] for k in keep} for r in out[:limit]]})
+    results = (out[:limit] if full
+               else [{k: r[k] for k in keep} for r in out[:limit]])
+    return {"as_of": last, "mode": mode, "setup": setup,
+            "matches": len(out), "results": results}
+
+
+def run(con, mode="A", setup="any", min_em_rs=None, max_price=None,
+        min_score=60, max_stop_pct=None, limit=15, include_flagged=False):
+    common.json_out(gather(con, mode, setup, min_em_rs, max_price, min_score,
+                           max_stop_pct, limit, include_flagged))
 
 
 if __name__ == "__main__":
